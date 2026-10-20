@@ -113,7 +113,7 @@ Uso:
 - Cliente: dirección de la sala
 - Admin: gestionar salas
 
-7. CATEGORIES (categories)
+✅7. CATEGORIES (categories)
 Campos comunes:
 - _id: identificador, lo genera MongoDB
 - slug: generado desde el nombre del género

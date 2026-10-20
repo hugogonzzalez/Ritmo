@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none" role="img" aria-labelledby="title desc">
+  <title id="title">Ritmo</title>
+  <desc id="desc">Entrada azul de concierto con nota musical</desc>
+  <defs><linearGradient id="blue" x1="4" y1="3" x2="60" y2="63" gradientUnits="userSpaceOnUse"><stop stop-color="#1684FF"/><stop offset="1" stop-color="#22C4F4"/></linearGradient></defs>
+  <rect width="64" height="64" rx="17" fill="url(#blue)"/>
+  <rect x="11" y="17" width="42" height="30" rx="6" fill="#fff"/>
+  <circle cx="11" cy="32" r="4.5" fill="url(#blue)"/>
+  <circle cx="53" cy="32" r="4.5" fill="url(#blue)"/>
+  <path d="M38 21v22" stroke="#1684FF" stroke-width="2" stroke-linecap="round" stroke-dasharray="2.5 3.5"/>
+  <path d="M27 26v11M27 26l8-1.5v9" stroke="#0878F9" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <ellipse cx="23.5" cy="38" rx="4.2" ry="3" transform="rotate(-24 23.5 38)" fill="#0878F9"/>
+  <ellipse cx="32" cy="34.5" rx="4" ry="2.8" transform="rotate(-24 32 34.5)" fill="#0878F9"/>
+  <path d="M44 27v10M48 27v10" stroke="#1684FF" stroke-width="1.8" stroke-linecap="round"/>
+</svg>
