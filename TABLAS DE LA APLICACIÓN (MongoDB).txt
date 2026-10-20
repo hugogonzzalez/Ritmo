@@ -1,0 +1,162 @@
+TABLAS DE LA APLICACIÓN (MongoDB)
+
+✅1. CONCERTS (concerts)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: texto único, generado desde el título
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- title: texto, obligatorio, 1 a 120 caracteres
+- description: texto, máximo 500, por defecto vacío
+- status: scheduled, full, cancelled o completed
+- images: lista de URLs (se sincroniza con la tabla images)
+Uso:
+- Home: listado de conciertos activos con su título
+- Cliente: ficha del concierto con descripción, estado y carrusel de imágenes
+- Admin: listado, crear, editar y gestionar imágenes
+
+✅2. PERFORMANCES (performances)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: texto único, generado desde concierto, ciudad y fecha
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- concertId: referencia a concerts, obligatoria
+- venue: sala, obligatoria, máximo 120
+- city: ciudad, obligatoria, máximo 80
+- startsAt: fecha y hora de inicio, obligatoria
+- endsAt: fecha y hora de fin, opcional
+- capacity: aforo, mínimo 1
+- price: precio base, mínimo 0
+- bookedParticipants: entradas vendidas, por defecto 0
+- status: scheduled, full, cancelled o completed
+- images: lista de URLs (se sincroniza con la tabla images)
+Uso:
+- Home: próximas sesiones de cada concierto (fecha, sala, precio)
+- Cliente: elegir sesión antes de comprar
+- Admin: listado, crear y editar sesiones
+
+✅3. IMAGES (images)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: pendiente de añadir (por ejemplo, desde alt o "imagen-1")
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- url: enlace http o https, obligatorio
+- alt: texto alternativo, máximo 160
+- concertId: referencia a concerts, opcional
+- performanceId: referencia a performances, opcional
+Uso:
+- Home y cliente: carrusel de imágenes del concierto
+- Admin: añadir y borrar imágenes en la edición
+
+4. VARIANTS (variants)
+Campos comunes:
+	SKU
+- _id: identificador, lo genera MongoDB
+- slug: pendiente de añadir (sesión + nombre del tipo)
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- performanceId: sesión a la que pertenece, obligatoria
+- name: tipo de entrada, por ejemplo General o VIP, máximo 60
+- price: precio de este tipo, mínimo 0
+- quantity: entradas disponibles de este tipo
+- sold: entradas vendidas, no puede superar quantity
+Uso:
+- Cliente: elegir tipo de entrada con precio y disponibilidad
+- Admin: gestionar los tipos de cada sesión
+
+✅5. ARTISTS (artists)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: generado desde el nombre artístico
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- name: nombre artístico, obligatorio
+- bio: biografía
+- socials: lista de redes, cada una con plataforma y URL
+- Relación: concerts.artistIds
+Uso:
+- Home y cliente: nombre y biografía en la ficha del concierto
+- Admin: crear y editar artistas
+
+6. VENUES (venues)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: generado desde el nombre de la sala
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- name: nombre de la sala, obligatorio
+- address: dirección
+- city: ciudad
+- capacity: aforo máximo de la sala
+- Relación: performances.venueId (sustituye al campo venue)
+Uso:
+- Cliente: dirección de la sala
+- Admin: gestionar salas
+
+7. CATEGORIES (categories)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: generado desde el nombre del género
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- name: género, por ejemplo rock, pop o urbano
+- Relación: concerts.categoryIds
+Uso:
+- Home: filtrar conciertos por género
+- Admin: gestionar géneros
+
+8. USERS (users)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: generado desde el nombre
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- name: nombre
+- email: único
+- passwordHash: contraseña cifrada, nunca en texto plano
+- roleId: referencia a roles
+Uso:
+- Cliente: registro e inicio de sesión
+- Admin: gestionar usuarios
+Requiere autenticación, que todavía no está hecha.
+
+9. ROLES (roles)
+Campos comunes:
+- _id: identificador, lo genera MongoDB
+- slug: generado desde el nombre del rol
+- isActive: sí/no, por defecto sí
+- createdAt: fecha de creación
+- updatedAt: fecha de última modificación
+- deletedAt: fecha de borrado lógico, vacía si no está borrado
+Campos propios:
+- name: admin o customer
+- permissions: lista de permisos
+Uso:
+- Admin: decide qué puede hacer cada usuario
+
