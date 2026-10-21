@@ -59,7 +59,7 @@ Uso:
 - Home y cliente: carrusel de imágenes del concierto
 - Admin: añadir y borrar imágenes en la edición
 
-4. VARIANTS (variants)
+✅4. VARIANTS (variants)
 Campos comunes:
 	SKU
 - _id: identificador, lo genera MongoDB
@@ -95,7 +95,7 @@ Uso:
 - Home y cliente: nombre y biografía en la ficha del concierto
 - Admin: crear y editar artistas
 
-6. VENUES (venues)
+✅6. VENUES (venues)
 Campos comunes:
 - _id: identificador, lo genera MongoDB
 - slug: generado desde el nombre de la sala
