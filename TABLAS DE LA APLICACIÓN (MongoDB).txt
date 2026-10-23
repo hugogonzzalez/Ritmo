@@ -128,7 +128,7 @@ Uso:
 - Home: filtrar conciertos por género
 - Admin: gestionar géneros
 
-8. USERS (users)
+✅8. USERS (users)
 Campos comunes:
 - _id: identificador, lo genera MongoDB
 - slug: generado desde el nombre
@@ -160,3 +160,28 @@ Campos propios:
 Uso:
 - Admin: decide qué puede hacer cada usuario
 
+
+
+service: validar id y slug que sea único les relationships feches, stock y los campos
+
+components y pages: lógica necogi en les pages que van a la service y a la store 
+
+fluexe y tasques: 
+
+readme poner arquitectura
+
+label con mucha información
+
+skufy: 
+
+intefritat_referencial:
+
+error 11000 409 
+
+SKU unique y string true en model
+
+try catch en cntrl
+
+crear sku.js dnd slug.js
+
+añadirlos en el créate y update
