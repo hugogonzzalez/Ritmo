@@ -1,0 +1,430 @@
+require('dotenv').config();
+
+const mongoose = require('mongoose');
+const connectDB = require('../config/database');
+const Concert = require('../models/concert.model');
+const Performance = require('../models/performance.model');
+const Artist = require('../models/artist.model');
+const Category = require('../models/category.model');
+const Venue = require('../models/venue.model');
+const Variant = require('../models/variant.model');
+const User = require('../models/user.model');
+const Role = require('../models/role.model');
+const { hashPassword } = require('../utils/password.util');
+const { generateSlug } = require('../utils/slug.util');
+const { generateSku } = require('../utils/sku');
+
+const sampleTitles = [
+  'Myke Towers',
+  'Camin',
+  'Bad Bunny',
+  'Estopa',
+  'De la Rose',
+  'Chimbala',
+  'Blessd',
+  'Bryant Myers',
+  'Ñengo Flow',
+  'Quevedo'
+];
+
+const sampleCategories = [
+  { name: 'Rock', description: 'Rock en español e internacional.' },
+  { name: 'Pop', description: 'Pop para todos los públicos.' },
+  { name: 'Rap', description: 'Rap y hip hop.' },
+  { name: 'Reguetón', description: 'Reguetón y música urbana latina.' },
+  { name: 'Electrónica', description: 'Música electrónica y DJ sets.' }
+];
+
+// Categorías asignadas a cada concierto de ejemplo (por título del concierto)
+const concertCategories = {
+  'Myke Towers': ['Reguetón'],
+  Camin: ['Rap'],
+  'Bad Bunny': ['Reguetón', 'Pop'],
+  Estopa: ['Rock'],
+  'De la Rose': ['Pop'],
+  Chimbala: ['Rap'],
+  Blessd: ['Rap'],
+  'Bryant Myers': ['Reguetón'],
+  'Ñengo Flow': ['Reguetón'],
+  Quevedo: ['Pop']
+};
+
+// Salas de ejemplo. La ciudad de cada sesión sale de la sala donde se celebra.
+const sampleVenues = [
+  { name: 'Estadi Olímpic', city: 'Barcelona', capacity: 55000 },
+  { name: 'Movistar Arena', city: 'Madrid', capacity: 15000 },
+  { name: 'Auditorio Marina', city: 'Valencia', capacity: 4000 },
+  { name: 'Sala Custom', city: 'Sevilla', capacity: 1200 },
+  { name: 'Bilbao Arena', city: 'Bilbao', capacity: 9000 }
+];
+
+const buildUniqueArtistSlug = async (name) => {
+  const baseSlug = generateSlug(name) || 'artista';
+  let slug = baseSlug;
+  let suffix = 2;
+
+  while (await Artist.findOne({ slug }).setOptions({ includeDeleted: true })) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+};
+
+const buildUniqueCategorySlug = async (name) => {
+  const baseSlug = generateSlug(name) || 'categoria';
+  let slug = baseSlug;
+  let suffix = 2;
+
+  while (await Category.findOne({ slug }).setOptions({ includeDeleted: true })) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+};
+
+const buildUniqueVenueSlug = async (name) => {
+  const baseSlug = generateSlug(name) || 'sala';
+  let slug = baseSlug;
+  let suffix = 2;
+
+  while (await Venue.findOne({ slug }).setOptions({ includeDeleted: true })) {
+    slug = `${baseSlug}-${suffix}`;
+    suffix += 1;
+  }
+
+  return slug;
+};
+
+const seedVenues = async () => {
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const { name, city, capacity } of sampleVenues) {
+    const existing = await Venue.findOne({ name }).setOptions({ includeDeleted: true });
+
+    if (existing) {
+      skippedCount += 1;
+      continue;
+    }
+
+    await Venue.create({
+      name,
+      slug: await buildUniqueVenueSlug(name),
+      description: `Sala de ejemplo en ${city}.`,
+      address: `Dirección de ejemplo, ${city}`,
+      city,
+      capacity,
+      images: [],
+      website: '',
+      status: 'active',
+      isActive: true,
+      deletedAt: null
+    });
+
+    createdCount += 1;
+  }
+
+  console.log(`Salas preparadas. Creadas: ${createdCount}. Ya existían: ${skippedCount}.`);
+};
+
+// Sesiones creadas antes de existir las salas: pasan de texto (venue, capacity) a venueId.
+// Usa la colección directamente para poder leer el campo antiguo.
+const migrateLegacyPerformances = async () => {
+  const legacy = await Performance.collection.find({ venueId: { $exists: false } }).toArray();
+  const fallback = await Venue.findOne({}).sort({ name: 1 });
+  let migratedCount = 0;
+
+  for (const performance of legacy) {
+    const venue = (await Venue.findOne({ name: performance.venue })) ?? fallback;
+    if (!venue) break;
+
+    await Performance.collection.updateOne(
+      { _id: performance._id },
+      { $set: { venueId: venue._id, city: venue.city }, $unset: { venue: '', capacity: '' } }
+    );
+    migratedCount += 1;
+  }
+
+  if (migratedCount > 0) console.log(`Sesiones migradas a salas: ${migratedCount}.`);
+};
+
+const seedArtists = async () => {
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const name of sampleTitles) {
+    const existing = await Artist.findOne({ name }).setOptions({ includeDeleted: true });
+
+    if (existing) {
+      skippedCount += 1;
+      continue;
+    }
+
+    await Artist.create({
+      name,
+      slug: await buildUniqueArtistSlug(name),
+      bio: '',
+      socials: [],
+      images: [],
+      isActive: true,
+      deletedAt: null
+    });
+
+    createdCount += 1;
+  }
+
+  console.log(`Artistas preparados. Creados: ${createdCount}. Ya existían: ${skippedCount}.`);
+};
+
+const seedCategories = async () => {
+  let createdCount = 0;
+  let skippedCount = 0;
+
+  for (const { name, description } of sampleCategories) {
+    const existing = await Category.findOne({ name }).setOptions({ includeDeleted: true });
+
+    if (existing) {
+      skippedCount += 1;
+      continue;
+    }
+
+    await Category.create({
+      name,
+      slug: await buildUniqueCategorySlug(name),
+      description,
+      isActive: true,
+      deletedAt: null
+    });
+
+    createdCount += 1;
+  }
+
+  console.log(`Categorías preparadas. Creadas: ${createdCount}. Ya existían: ${skippedCount}.`);
+};
+
+const findCategoryIdsFor = async (title) => {
+  const names = concertCategories[title] ?? [];
+
+  if (names.length === 0) return [];
+
+  const categories = await Category.find({ name: { $in: names } }).select('_id');
+  return categories.map((category) => category._id);
+};
+
+const buildPerformance = (concertId, title, index, artistId, venue) => {
+  const month = index % 12;
+  const dayOfMonth = (index % 27) + 1;
+  const startsAt = new Date(Date.UTC(2027, month, dayOfMonth, 20, 0, 0));
+  const dayText = startsAt.toISOString().slice(0, 10);
+
+  return {
+    concertId,
+    slug: generateSlug(`${title}-${venue.city}-${dayText}`),
+    venueId: venue._id,
+    city: venue.city,
+    startsAt,
+    endsAt: null,
+    price: 25 + index * 3,
+    bookedParticipants: 0,
+    status: 'scheduled',
+    isActive: true,
+    artistIds: artistId ? [artistId] : []
+  };
+};
+
+const buildDescription = (title) => `Concierto de ${title} en Ritmo.`;
+
+const seedConcerts = async () => {
+  let createdCount = 0;
+  let backfilledCount = 0;
+
+  const venueList = await Venue.find({}).sort({ name: 1 });
+
+  for (const [index, title] of sampleTitles.entries()) {
+    const venue = venueList[index % venueList.length];
+    const existingConcert = await Concert.findOne({ title })
+      .setOptions({ includeDeleted: true })
+      .select('_id description artistIds categoryIds');
+
+    const artist = await Artist.findOne({ name: title });
+    const categoryIds = await findCategoryIdsFor(title);
+
+    if (existingConcert) {
+      const needsArtists = Boolean(artist) && (existingConcert.artistIds?.length ?? 0) === 0;
+      const needsDescription = !existingConcert.description;
+      const needsCategories = categoryIds.length > 0 && (existingConcert.categoryIds?.length ?? 0) === 0;
+
+      if (needsArtists || needsDescription || needsCategories) {
+        await Concert.updateOne(
+          { _id: existingConcert._id },
+          {
+            ...(needsArtists ? { artistIds: [artist._id] } : {}),
+            ...(needsDescription ? { description: buildDescription(title) } : {}),
+            ...(needsCategories ? { categoryIds } : {})
+          }
+        );
+
+        if (needsArtists) {
+          await Performance.updateMany(
+            { concertId: existingConcert._id, artistIds: { $size: 0 } },
+            { artistIds: [artist._id] }
+          );
+        }
+
+        backfilledCount += 1;
+      }
+
+      continue;
+    }
+
+    const baseSlug = generateSlug(title) || 'concierto';
+    let candidateSlug = baseSlug;
+    let suffix = 2;
+
+    while (
+      await Concert.findOne({ slug: candidateSlug })
+        .setOptions({ includeDeleted: true })
+        .select('_id')
+    ) {
+      candidateSlug = `${baseSlug}-${suffix}`;
+      suffix += 1;
+    }
+
+    const concert = await Concert.create({
+      title,
+      description: buildDescription(title),
+      artistIds: artist ? [artist._id] : [],
+      categoryIds,
+      slug: candidateSlug,
+      status: 'scheduled',
+      isActive: true,
+      deletedAt: null
+    });
+
+    await Performance.create(buildPerformance(concert._id, title, index, artist?._id, venue));
+    createdCount += 1;
+  }
+
+  console.log(`Conciertos preparados. Creados: ${createdCount}. Actualizados: ${backfilledCount}.`);
+};
+
+// Roles de la aplicación con sus permisos
+const sampleRoles = [
+  {
+    name: 'admin',
+    description: 'Gestiona conciertos, sesiones, entradas, usuarios y categorías',
+    permissions: [
+      'concerts:read', 'concerts:manage', 'performances:manage', 'variants:manage', 'categories:manage', 'users:manage'
+    ]
+  },
+  {
+    name: 'customer',
+    description: 'Consulta conciertos, compra entradas y consulta sus pedidos',
+    permissions: ['concerts:read', 'purchases:create', 'orders:read-own']
+  }
+];
+
+const seedRoles = async () => {
+  let createdCount = 0;
+
+  for (const sample of sampleRoles) {
+    const exists = await Role.exists({ name: sample.name });
+    if (exists) continue;
+
+    await Role.create({ ...sample, slug: generateSlug(sample.name) });
+    createdCount += 1;
+  }
+
+  console.log(`Roles preparados. Creados: ${createdCount}.`);
+};
+
+// Usuarios de desarrollo. La contraseña puede cambiarse con SEED_USER_PASSWORD (por defecto Ritmo2026).
+const sampleUsers = [
+  { name: 'Ana García', email: 'ana.garcia@ritmo.test' },
+  { name: 'Luis Martín', email: 'luis.martin@ritmo.test' },
+  { name: 'Marta López', email: 'marta.lopez@ritmo.test' },
+  { name: 'Carlos Ruiz', email: 'carlos.ruiz@ritmo.test' },
+  { name: 'Lucía Fernández', email: 'lucia.fernandez@ritmo.test' }
+];
+
+const seedUsers = async () => {
+  const password = process.env.SEED_USER_PASSWORD || 'Ritmo2026';
+  const passwordHash = await hashPassword(password);
+  const adminRole = await Role.findOne({ name: 'admin' });
+  const customerRole = await Role.findOne({ name: 'customer' });
+  let createdCount = 0;
+
+  for (const sample of sampleUsers) {
+    const exists = await User.exists({ email: sample.email });
+    if (exists) continue;
+
+    await User.create({
+      name: sample.name,
+      email: sample.email,
+      passwordHash,
+      slug: generateSlug(sample.name),
+      roleId: sample.email === 'ana.garcia@ritmo.test' ? adminRole._id : customerRole._id
+    });
+    createdCount += 1;
+  }
+
+  // Usuarios creados antes de existir los roles: se les asigna customer
+  const migrated = await User.updateMany({ roleId: null }, { roleId: customerRole._id });
+
+  console.log(`Usuarios preparados. Creados: ${createdCount}. Sin rol asignados: ${migrated.modifiedCount}.`);
+};
+
+const variantTemplates = [
+  { name: 'VIP', suffix: 'VIP', description: 'Acceso preferente y zona VIP', factor: 2.5, quantity: 50 },
+  { name: 'Pista', suffix: 'PISTA', description: 'Entrada de pista general', factor: 1, quantity: 300 },
+  { name: 'Grada', suffix: 'GRADA', description: 'Entrada de grada numerada', factor: 0.6, quantity: 500 }
+];
+
+const seedVariants = async () => {
+  const performances = await Performance.find({});
+  let createdCount = 0;
+
+  for (const performance of performances) {
+    for (const template of variantTemplates) {
+      const exists = await Variant.exists({ performanceId: performance._id, name: template.name });
+      if (exists) continue;
+
+      await Variant.create({
+        performanceId: performance._id,
+        name: template.name,
+        description: template.description,
+        price: Math.round(performance.price * template.factor * 100) / 100,
+        quantity: template.quantity,
+        sold: 0,
+        sku: generateSku(performance._id, performance.startsAt),
+        slug: `${performance.slug}-${generateSlug(template.name)}`
+      });
+      createdCount += 1;
+    }
+  }
+
+  console.log(`Variantes preparadas. Creadas: ${createdCount}.`);
+};
+
+const seed = async () => {
+  try {
+    await connectDB();
+    await seedArtists();
+    await seedCategories();
+    await seedRoles();
+    await seedUsers();
+    await seedVenues();
+    await migrateLegacyPerformances();
+    await seedConcerts();
+    await seedVariants();
+  } catch (error) {
+    console.error('Error en el seeder:', error.message);
+    process.exitCode = 1;
+  } finally {
+    await mongoose.disconnect();
+  }
+};
+
+seed();

@@ -1,0 +1,96 @@
+import { AlertService } from '../../../../core/services/alert.service';
+import { ImageService } from '../../../../core/services/image.service';
+import { ImagePayload } from '../../../../core/models/image.model';
+import { Component, OnInit, signal, inject } from '@angular/core';
+import { Router, RouterLink } from '@angular/router';
+import { LucideArrowLeft } from '@lucide/angular';
+import { ImageManager } from '../../../images/components/image-manager/image-manager';
+import { VariantForm } from '../../components/variant-form/variant-form';
+import { VariantPayload } from '../../../../core/models/variant.model';
+import { VariantService } from '../../../../core/services/variant.service';
+import { PerformanceService } from '../../../../core/services/performance.service';
+import { getApiErrorMessage } from '../../../../core/services/api-error.util';
+import { VariantsStore } from '../../../../core/stores/variants.store';
+import { PerformancesStore } from '../../../../core/stores/performances.store';
+
+@Component({
+  selector: 'app-variant-create',
+  standalone: true,
+  imports: [VariantForm, ImageManager, RouterLink, LucideArrowLeft],
+  template: `
+    <section class="admin-content">
+      <a class="form-back" routerLink="/variants"><svg lucideArrowLeft [size]="16"></svg> Volver a variantes</a>
+      <div class="admin-page-heading">
+        <div><p class="eyebrow">GESTIÓN DE VARIANTES</p><h1>Nueva variante</h1><p class="heading-copy">Define un tipo de entrada (VIP, Pista, Grada…) para una sesión.</p></div>
+      </div>
+
+      <app-variant-form [performances]="performancesStore.performances()" [saving]="store.saving()" [error]="store.error()" (formSubmit)="save($event)" (cancelClick)="cancel()" />
+      <app-image-manager [pendingUrls]="pendingUrls()" (urlsAdded)="addPending($event)" (pendingRemoved)="removePending($event)" />
+    </section>
+  `,
+  styles: [`.admin-content{max-width:820px;margin:auto;padding:28px 36px 52px}.form-back{display:inline-flex;align-items:center;gap:7px;margin-bottom:20px;color:#718096;text-decoration:none;font-size:11px;font-weight:600}.form-back:hover{color:#0878f9}.admin-page-heading{margin-bottom:22px}.eyebrow{margin:0 0 7px;color:#0878f9;font-size:10px;font-weight:800;letter-spacing:1.5px}.admin-page-heading h1{margin:0;font:700 29px 'Space Grotesk',sans-serif;letter-spacing:-1px}.heading-copy{margin:6px 0 0;color:#758093;font-size:13px}@media(max-width:650px){.admin-content{padding:22px 16px 38px}.admin-page-heading h1{font-size:25px}}`]
+})
+export class VariantCreate implements OnInit {
+
+  readonly store = inject(VariantsStore);
+  readonly performancesStore = inject(PerformancesStore);
+  private readonly variantService = inject(VariantService);
+  private readonly performanceService = inject(PerformanceService);
+  private readonly router = inject(Router);
+  private readonly alerts = inject(AlertService);
+  private readonly imageService = inject(ImageService);
+
+  ngOnInit(): void {
+    this.store.clearError();
+    this.store.clearSelected();
+    void this.loadPerformances();
+  }
+
+  async loadPerformances(): Promise<void> {
+    try {
+      const response = await this.performanceService.getAll({ includeInactive: true });
+      this.performancesStore.setItems(response.data);
+    } catch (error) {
+      this.store.setError(getApiErrorMessage(error, 'No se han podido cargar las sesiones.'));
+    }
+  }
+
+  async save(payload: VariantPayload): Promise<void> {
+    this.store.setSaving(true);
+    this.store.setError(null);
+    try {
+      const response = await this.variantService.create(payload);
+      this.store.upsert(response.data);
+      await this.uploadPending(response.data._id);
+      await this.alerts.success('Variante creada', response.data.name);
+      await this.router.navigateByUrl('/variants');
+    } catch (error) {
+      this.store.setError(getApiErrorMessage(error, 'No se ha podido guardar la variante.'));
+    } finally {
+      this.store.setSaving(false);
+    }
+  }
+
+  cancel(): void {
+    void this.router.navigateByUrl('/variants');
+  }
+
+  readonly pendingUrls = signal<string[]>([]);
+
+  addPending(urls: string[]): void {
+    this.pendingUrls.update((list) => [...list, ...urls]);
+  }
+
+  removePending(index: number): void {
+    this.pendingUrls.update((list) => list.filter((_, position) => position !== index));
+  }
+
+  // Sube las URLs elegidas antes de guardar, cuando la entidad ya tiene id.
+  private async uploadPending(id: string): Promise<void> {
+    const urls = this.pendingUrls();
+    if (urls.length === 0) return;
+
+    await this.imageService.create({ variantId: id, urls } as ImagePayload);
+    this.pendingUrls.set([]);
+  }
+}
