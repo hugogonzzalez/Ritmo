@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap');
+@layer theme, utilities;
+@import 'tailwindcss/theme.css' layer(theme);
+@import 'tailwindcss/utilities.css' layer(utilities);
+
+* {
+    box-sizing: border-box
+}
+
+html {
+    scroll-behavior: smooth
+}
+
+body {
+    margin: 0;
+    color: #151515;
+    background: #f7f7f5;
+    font-family: 'DM Sans', sans-serif
+}
+
+.admin-shell { min-height: 100vh; background: #f5f7fa; }
+.admin-shell > main { margin-left: 248px; min-height: 100vh; }
+@media (max-width: 760px) { .admin-shell > main { margin-left: 0; } }
+
+button,
+input {
+    font: inherit
+}
