@@ -146,7 +146,7 @@ Uso:
 - Admin: gestionar usuarios
 Requiere autenticación, que todavía no está hecha.
 
-9. ROLES (roles)
+✅9. ROLES (roles)
 Campos comunes:
 - _id: identificador, lo genera MongoDB
 - slug: generado desde el nombre del rol
@@ -185,3 +185,26 @@ try catch en cntrl
 crear sku.js dnd slug.js
 
 añadirlos en el créate y update
+
+si desactivamos un usuario que se desactive el profile
+
+services hagan validaciones a saco en el backend
+
+diferencia entre pages y components
+
+JWT
+auth/profile y users separado
+
+el role_jwt, hash_role en service de auth
+
+has_role en la store del client
+
+revoked_blist genera tabla en el servidor lo gasta el log out y el middelware auth 
+
+integridad referencial en en jwt que haya entre user/role/profile
+
+guardar token en cookies http only services : withcredentials true servidor: activar, leer cookiesparsers
+
+al cambiar el avatar en el profile al cambiarlo que se cambie sin hacer F5
+
+tabla de profiles que salga en el dashboard de admin en el apartado de usuarios que esta ususarios roles
