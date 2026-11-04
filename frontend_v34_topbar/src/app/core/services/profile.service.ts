@@ -3,7 +3,7 @@ import { ApiResponse } from '../models/api.model';
 import { AdminProfile, Profile, ProfilePayload } from '../models/profile.model';
 import { ApiService } from './api.service';
 
-// Perfil del usuario autenticado (/api/profiles/me)
+// Perfiles: el propio usuario (/api/profiles/me) y, para administradores, cualquier perfil (/api/profiles/:userId)
 @Injectable({ providedIn: 'root' })
 export class ProfileService {
   private readonly api = inject(ApiService);
@@ -17,7 +17,17 @@ export class ProfileService {
     return this.api.get<ApiResponse<AdminProfile[]>>('profiles');
   }
 
+  // Perfil de un usuario concreto (el propio o cualquiera si eres administrador)
+  async getByUserId(userId: string): Promise<ApiResponse<Profile>> {
+    return this.api.get<ApiResponse<Profile>>(`profiles/${userId}`);
+  }
+
   async updateMe(payload: ProfilePayload): Promise<ApiResponse<Profile>> {
     return this.api.patch<ApiResponse<Profile>>('profiles/me', payload);
+  }
+
+  // Editar el perfil de otro usuario (solo administradores)
+  async updateByUserId(userId: string, payload: ProfilePayload): Promise<ApiResponse<Profile>> {
+    return this.api.patch<ApiResponse<Profile>>(`profiles/${userId}`, payload);
   }
 }

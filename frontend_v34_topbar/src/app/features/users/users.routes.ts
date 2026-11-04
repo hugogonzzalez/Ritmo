@@ -10,6 +10,10 @@ export const USERS_ROUTES: Routes = [
     loadComponent: () => import('./pages/profiles-admin/profiles-admin').then(m => m.ProfilesAdmin)
   },
   {
+    path: 'profiles/:userId/edit',
+    loadComponent: () => import('./pages/profile-edit/profile-edit').then(m => m.ProfileEdit)
+  },
+  {
     path: 'create',
     loadComponent: () => import('./pages/user-create/user-create').then(m => m.UserCreate)
   },
