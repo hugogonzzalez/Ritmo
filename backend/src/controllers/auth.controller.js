@@ -1,12 +1,11 @@
 const authService = require('../services/auth.service');
 const { AUTH_COOKIE_NAME, getAuthCookieOptions } = require('../utils/auth-cookie.util');
 
-// Guarda el token en una cookie httpOnly y devuelve solo los datos de la sesión (sin token)
+// Guarda el token en una cookie httpOnly y además lo devuelve en el JSON,
+// para que el frontend lo guarde en AuthStore y authInterceptor lo envíe como Bearer.
 const sendSession = (res, status, message, result) => {
-  const { token, ...session } = result;
-
-  res.cookie(AUTH_COOKIE_NAME, token, getAuthCookieOptions());
-  return res.status(status).json({ success: true, message, data: session });
+  res.cookie(AUTH_COOKIE_NAME, result.token, getAuthCookieOptions());
+  return res.status(status).json({ success: true, message, data: result });
 };
 
 class AuthController {

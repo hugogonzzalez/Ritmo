@@ -14,13 +14,14 @@ export class AuthService {
   // Promesa única: app.ts y los guards esperan a la misma comprobación de sesión
   private restoring?: Promise<void>;
 
+  // Guarda usuario, perfil y token. El token se envía después en cada petición (authInterceptor).
   async login(credentials: LoginCredentials): Promise<void> {
     const response = await this.api.post<ApiResponse<LoginResult>>('auth/login', credentials);
 
-    this.authStore.login(response.data.user, response.data.profile);
+    this.authStore.login(response.data.user, response.data.profile, response.data.token);
   }
 
-  // El backend revoca el token y borra la cookie; la sesión local se limpia aunque la llamada falle
+  // El backend revoca el token y borra la cookie; la sesión local (incluido el token) se limpia aunque la llamada falle
   async logout(): Promise<void> {
     try {
       if (this.authStore.isAuthenticated()) {
@@ -34,13 +35,12 @@ export class AuthService {
   }
 
   // Al arrancar la app (o al entrar en una ruta protegida): pregunta al backend quién es el usuario.
-  // Si hay cookie válida lo recupera; si no, la sesión queda vacía.
   restoreSession(): Promise<void> {
     this.restoring ??= this.loadSession();
     return this.restoring;
   }
 
-  // Vuelve a leer usuario y perfil del backend (tras editar el perfil, por ejemplo)
+  // Vuelve a leer usuario y perfil del backend (tras editar el perfil, por ejemplo). Conserva el token.
   async refresh(): Promise<void> {
     await this.loadSession();
   }
@@ -48,7 +48,7 @@ export class AuthService {
   private async loadSession(): Promise<void> {
     try {
       const response = await this.api.get<ApiResponse<MeResult>>('auth/me');
-      this.authStore.login(response.data.user, response.data.profile);
+      this.authStore.login(response.data.user, response.data.profile, this.authStore.token());
     } catch {
       this.authStore.logout();
     }

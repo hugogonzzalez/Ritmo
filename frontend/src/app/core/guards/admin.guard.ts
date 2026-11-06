@@ -5,7 +5,8 @@ import { AuthService } from '../services/auth.service';
 import { AuthStore } from '../stores/auth.store';
 
 // Solo deja pasar a administradores (role ADMIN).
-// Sin sesión va al login; con sesión pero sin permiso, al perfil con aviso de acceso denegado.
+// Sin sesión va al login; con sesión pero sin permiso, al login con aviso de acceso denegado.
+// No redirige a /profile: así el guard puede aplicarse también a /profile sin bucle de redirecciones.
 export const adminGuard: CanActivateFn = async () => {
   // inject() debe llamarse antes de cualquier await
   const authService = inject(AuthService);
@@ -19,5 +20,5 @@ export const adminGuard: CanActivateFn = async () => {
   if (authStore.isAdmin()) return true;
 
   void alerts.error('Acceso denegado', 'Solo los administradores pueden acceder a esta sección.');
-  return router.createUrlTree(['/profile']);
+  return router.createUrlTree(['/login']);
 };

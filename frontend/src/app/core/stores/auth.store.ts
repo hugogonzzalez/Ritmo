@@ -3,15 +3,18 @@ import { ROLE_LABELS } from '../models/role.model';
 import { AuthRole, AuthUser } from '../models/auth.models';
 import { Profile } from '../models/profile.model';
 
-// Estado de autenticación global. El token vive en una cookie httpOnly que el navegador
-// gestiona solo; aquí guardamos el usuario y su perfil. Al recargar, AuthService lo pide a GET auth/me.
+// Estado de autenticación global: usuario, perfil y token.
+// El token llega en la respuesta de login y lo usa authInterceptor para la cabecera Authorization.
+// Al recargar la página el token se pierde; la sesión se recupera con GET auth/me (cookie).
 @Injectable({ providedIn: 'root' })
 export class AuthStore {
   private readonly _user = signal<AuthUser | null>(null);
   private readonly _profile = signal<Profile | null>(null);
+  private readonly _token = signal<string | null>(null);
 
   readonly user = this._user.asReadonly();
   readonly profile = this._profile.asReadonly();
+  readonly token = this._token.asReadonly();
   readonly avatarUrl = computed(() => this._profile()?.avatarUrl ?? null);
   readonly isAuthenticated = computed(() => this._user() !== null);
   readonly roles = computed<AuthRole[]>(() => this.extractRoles(this._user()));
@@ -21,14 +24,16 @@ export class AuthStore {
     return name ? (ROLE_LABELS[name] ?? name) : '';
   });
 
-  login(user: AuthUser, profile: Profile | null = null): void {
+  login(user: AuthUser, profile: Profile | null, token: string | null): void {
     this._user.set(user);
     this._profile.set(profile);
+    this._token.set(token);
   }
 
   logout(): void {
     this._user.set(null);
     this._profile.set(null);
+    this._token.set(null);
   }
 
   setProfile(profile: Profile | null): void {

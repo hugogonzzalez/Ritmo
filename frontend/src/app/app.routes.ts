@@ -17,30 +17,37 @@ export const routes: Routes = [
       { path: '', redirectTo: 'concerts', pathMatch: 'full' },
       {
         path: 'profile',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/profile/profile.routes').then(m => m.PROFILE_ROUTES)
       },
       {
         path: 'concerts',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/concerts/concerts.routes').then(m => m.CONCERTS_ROUTES)
       },
       {
         path: 'performances',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/performances/performances.routes').then(m => m.PERFORMANCES_ROUTES)
       },
       {
         path: 'artists',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/artists/artists.routes').then(m => m.ARTISTS_ROUTES)
       },
       {
         path: 'categories',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/categories/categories.routes').then(m => m.CATEGORIES_ROUTES)
       },
       {
         path: 'venues',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/venues/venues.routes').then(m => m.VENUES_ROUTES)
       },
       {
         path: 'variants',
+        canActivate: [adminGuard],
         loadChildren: () => import('./features/variants/variants.routes').then(m => m.VARIANTS_ROUTES)
       },
       {

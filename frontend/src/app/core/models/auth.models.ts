@@ -12,9 +12,10 @@ export interface LoginCredentials {
   password: string;
 }
 
-// data de POST /api/auth/login. El token va en una cookie httpOnly: no llega al JavaScript.
+// data de POST /api/auth/login. El token se guarda en AuthStore y el interceptor lo envía en Authorization.
 export interface LoginResult {
   expiresIn: string;
+  token: string;
   user: AuthUser;
   profile: Profile | null;
 }
