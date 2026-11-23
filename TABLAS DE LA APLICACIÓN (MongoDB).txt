@@ -208,3 +208,11 @@ guardar token en cookies http only services : withcredentials true servidor: act
 al cambiar el avatar en el profile al cambiarlo que se cambie sin hacer F5
 
 tabla de profiles que salga en el dashboard de admin en el apartado de usuarios que esta ususarios roles
+
+
+
+la lista de deseos iria en navbar y tendria una page propia y hay saldria la lista de deseos y en los conciertos un boton para añadirlo y crea tabla en base de datos
+
+comentarios genera tabla relationships tienes que estar logueado si o si rutas con middelware auth en el cliente impacta no tendrian page propia impacta en el details
+
+dashboard hacer una categoria el sentimiento de los productos lee todos los comentarios de ese producto si el resultado es positivo negativo o neutral 
