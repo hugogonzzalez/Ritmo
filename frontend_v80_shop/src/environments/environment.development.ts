@@ -1,0 +1,1 @@
+export const environment = { production: false, apiUrl: 'http://localhost:3000/api', apiTimeoutMs: 10000, chatbotUrl: 'http://localhost:3001/api/chat', tiempoUrl: 'http://localhost:3001/api/tiempo/concierto', resumenUrl: 'http://localhost:3001/api/resumen' };
